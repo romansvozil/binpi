@@ -1,4 +1,5 @@
 import struct
+import typing
 from typing import Callable
 
 
@@ -68,7 +69,7 @@ class Skip():
     ...
 
 
-def create_simple_class(format: str, size: int) -> type:
+def create_simple_number_class(format: str, size: int) -> type[int]:
     class _inner(SerializableType):
         def load_from_bytes(self, reader: Reader, instance, *args, **kwargs):
             return struct.unpack(format, reader.read_bytes(size))[0]
@@ -76,25 +77,25 @@ def create_simple_class(format: str, size: int) -> type:
         def write_from_value(self, writer: Writer, value, *args, **kwargs):
             writer.write_bytes(struct.pack(format, value))
 
-    return _inner
+    return _inner  # type: ignore
 
 
-LEInt = create_simple_class("<i", 4)
-LEUInt = create_simple_class("<I", 4)
-LEShort = create_simple_class("<h", 2)
-LEUShort = create_simple_class("<H", 2)
-LEByte = create_simple_class("<b", 1)
-LEUByte = create_simple_class("<B", 1)
+LEInt = create_simple_number_class("<i", 4)
+LEUInt = create_simple_number_class("<I", 4)
+LEShort = create_simple_number_class("<h", 2)
+LEUShort = create_simple_number_class("<H", 2)
+LEByte = create_simple_number_class("<b", 1)
+LEUByte = create_simple_number_class("<B", 1)
 
-BEInt = create_simple_class(">i", 4)
-BEUInt = create_simple_class(">I", 4)
-BEShort = create_simple_class(">h", 2)
-BEUShort = create_simple_class(">H", 2)
-BEByte = create_simple_class(">b", 1)
-BEUByte = create_simple_class(">B", 1)
+BEInt = create_simple_number_class(">i", 4)
+BEUInt = create_simple_number_class(">I", 4)
+BEShort = create_simple_number_class(">h", 2)
+BEUShort = create_simple_number_class(">H", 2)
+BEByte = create_simple_number_class(">b", 1)
+BEUByte = create_simple_number_class(">B", 1)
 
 
-class List(SerializableType):
+class _List(SerializableType):
     __size: int | str | Callable  # todo: for more complex time the Callable argument kinda fails to provide enough
     # context about where exactly are we during deserializing, especially in nested/recursive structures
     __type: type
@@ -127,6 +128,11 @@ class List(SerializableType):
             else self.__size(instance) \
             if callable(self.__size) \
             else getattr(instance, self.__size)
+
+
+def List(type_: type, size: int | str | Callable, *args, **kwargs) -> type[typing.List]:
+    # quite hacky way of doing this, but it is what it is
+    return _List(type_, size, *args, **kwargs)  # type: ignore
 
 
 def get_usable_fields(class_):
