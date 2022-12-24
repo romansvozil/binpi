@@ -36,10 +36,10 @@ class Writer:
 
 class FileWriter(Writer):
     def __init__(self, file_path=None, file=None):
-        self.__file = file or open(file_path, "wb")
+        self.file = file or open(file_path, "wb")
 
     def write_bytes(self, data: bytes):
-        self.__file.write(data)
+        self.file.write(data)
 
 
 class SizeCalculatorWriter(Writer):
@@ -55,7 +55,7 @@ class SerializableType:
         self.use_if = use_if
 
     def load_from_bytes(self, reader: Reader, instance, *args, **kwargs):
-        raise
+        raise NotImplementedError
 
     def write_from_value(self, writer: Writer, value, *args, **kwargs):
         raise NotImplementedError
@@ -95,7 +95,8 @@ BEUByte = create_simple_class(">B", 1)
 
 
 class List(SerializableType):
-    __size: int | str | Callable
+    __size: int | str | Callable  # todo: for more complex time the Callable argument kinda fails to provide enough
+    # context about where exactly are we during deserializing, especially in nested/recursive structures
     __type: type
 
     def __init__(self, type_: type, size: int | str | Callable, *args, **kwargs):
@@ -128,23 +129,27 @@ class List(SerializableType):
             else getattr(instance, self.__size)
 
 
+def get_usable_fields(class_):
+    return [(attr, val) for attr, val in class_.__annotations__.items() if
+            not callable(val) and not attr.startswith("__") and not isinstance(val, Skip)]
+
+
 def deserialize(class_: type, reader: Reader):
     result = class_()
 
-    for key, type_ in [(attr, val) for attr, val in class_.__annotations__.items() if
-                       not callable(val) and not attr.startswith("__") and not isinstance(val, Skip)]:
+    for key, type_ in get_usable_fields(class_):
         setattr(result, key, type_.load_from_bytes(reader, result))
 
     return result
 
 
 def serialize(value, writer: Writer):
-    for key, type_ in [(attr, val) for attr, val in type(value).__annotations__.items() if
-                       not callable(val) and not attr.startswith("__") and not isinstance(val, Skip)]:
+    for key, type_ in get_usable_fields(type(value)):
         type_.write_from_value(writer, getattr(value, key))
 
 
 def get_deserialized_size(value) -> int:
+    """ NOTE: this function is quite expensive to call on big data structures """
     writer = SizeCalculatorWriter()
     serialize(value, writer)
     return writer.current_size
