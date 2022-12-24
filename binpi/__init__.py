@@ -1,6 +1,7 @@
 import struct
 from typing import Callable
 
+
 class Reader:
     def read_bytes(self, n: int):
         raise NotImplementedError
@@ -8,14 +9,10 @@ class Reader:
 
 class FileReader(Reader):
     def __init__(self, file_path=None, file=None):
-        self.__file = file if file is not None else open(file_path, "rb")
+        self.file = file if file is not None else open(file_path, "rb")
 
     def read_bytes(self, n: int):
-        return self.__file.read(n)
-
-    @property
-    def file(self):
-        return self.__file
+        return self.file.read(n)
 
 
 class BufferReader(Reader):
@@ -47,19 +44,15 @@ class FileWriter(Writer):
 
 class SizeCalculatorWriter(Writer):
     def __init__(self):
-        self.__current_size = 0
+        self.current_size = 0
 
     def write_bytes(self, data: bytes):
-        self.__current_size += len(data)
-
-    @property
-    def current_size(self):
-        return self.__current_size
+        self.current_size += len(data)
 
 
 class SerializableType:
     def __init__(self, *args, use_if=None, **kwargs):
-        self.__use_if = use_if
+        self.use_if = use_if
 
     def load_from_bytes(self, reader: Reader, instance, *args, **kwargs):
         raise
@@ -68,7 +61,7 @@ class SerializableType:
         raise NotImplementedError
 
     def should_be_used(self, instance):
-        return self.__use_if is None or self.__use_if(instance)
+        return self.use_if is None or self.use_if(instance)
 
 
 class Skip():
@@ -127,19 +120,19 @@ class List(SerializableType):
             else:
                 serialize(val, writer)
 
-
     def get_size(self, instance):
         return self.__size \
             if type(self.__size) == int \
             else self.__size(instance) \
-                if callable(self.__size) \
-                else getattr(instance, self.__size)
+            if callable(self.__size) \
+            else getattr(instance, self.__size)
 
 
 def deserialize(class_: type, reader: Reader):
     result = class_()
 
-    for key, type_ in [(attr, val) for attr, val in class_.__annotations__.items() if not callable(val) and not attr.startswith("__") and not isinstance(val, Skip)]:
+    for key, type_ in [(attr, val) for attr, val in class_.__annotations__.items() if
+                       not callable(val) and not attr.startswith("__") and not isinstance(val, Skip)]:
         setattr(result, key, type_.load_from_bytes(reader, result))
 
     return result

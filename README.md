@@ -1,6 +1,6 @@
 # binpi
 
-binpi is library that provides simple interface for serializing and deserializing binary file formats. binpi is currently in a state of being POC.
+binpi aims to provide simple interface for serializing and deserializing binary file formats. 
 
 ## Usage:
 ```python
@@ -12,6 +12,21 @@ class FileHeader:
     prop3: binpi.LEByte()
     some_data: binpi.List(binpi.LEByte(), size="prop1")
 
-    
+
+# deserializing    
 header_data = binpi.deserialize(FileHeader, binpi.FileReader("./some_path"))
+
+# modify
+header_data.prop2 = 200
+
+#serializing 
+binpi.serialize(header_data, binpi.FileWriter("./another_path"))
 ```
+
+## How to install:
+```bash 
+pip install binpi
+```
+
+## Notes:
+- As previously mentioned, binpi is in state of being a POC, so the whole API might drastically change. Currently, the library uses `__annotations__` to gather data about class, this might change later to the "django" style of defining models (`prop1 = binpi.LEInt()` instead of `prop1: binpi.LEInt()`), which might (might not) help with typechecking and autocompletion (which is atm broken).
