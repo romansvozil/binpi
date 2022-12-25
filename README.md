@@ -1,6 +1,6 @@
 # binpi
 
-binpi aims to provide a simple interface for serializing and deserializing binary file formats. 
+binpi aims to provide a simple interface for serializing and deserializing binary file formats.
 
 ## Usage:
 
@@ -28,13 +28,12 @@ binpi.serialize(header_data, binpi.FileWriter("./another_path"))
 _For more examples, check `./examples/`_
 
 ## How to install:
+
 ```bash 
 pip install binpi
 ```
 
 ## TODO:
-- ~~Fix autocompletion (since we're using for annotation `binpi.LEInt()` the IDE's cannot guess the expected type correctly)~~ kinda fixed, but it's quite hacky
-- Performance improvements (batch struct.un/pack should help)
-- Partial structure (de)serializing (optional `from`/`to` arguments)
+
 - String structure (custom encoding support, sized/c-like)
-- Maybe get rid of LE/BE type prefixes and make it the reader's responsibility, not sure if any formats use both LE and BE.
+- tests

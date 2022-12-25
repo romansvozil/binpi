@@ -51,6 +51,14 @@ class SizeCalculatorWriter(Writer):
         self.current_size += len(data)
 
 
+class BufferWriter(Writer):
+    def __init__(self):
+        self.buffer = bytes()
+
+    def write_bytes(self, data: bytes):
+        self.buffer += data # todo: probably use byte buffer or whatever is it
+
+
 class SerializableType:
     def __init__(self, *args, use_if=None, **kwargs):
         self.use_if = use_if
@@ -150,15 +158,23 @@ def List(type_: type, size: int | str | Callable, *args, **kwargs) -> type[typin
     return _List(type_, size, *args, **kwargs)  # type: ignore
 
 
-def get_usable_fields(class_, start=None, end=None):
-    return [(attr, val) for attr, val in class_.__annotations__.items() if
+def get_usable_fields(class_, first=None, last=None):
+    pairs = [(attr, val) for attr, val in class_.__annotations__.items() if
             not attr.startswith("__") and not isinstance(val, Skip)]
 
+    first_index, last_index = 0, len(pairs)
+    if first is not None:
+        first_index = next(i for i in range(len(pairs)) if pairs[i][0] == first)
+    if last is not None:
+        last_index = next(i for i in range(len(pairs)) if pairs[i][0] == last)
 
-def deserialize(class_: type, reader: Reader, start=None, end=None):
+    return pairs[first_index: min(last_index+1, len(pairs))]
+
+
+def deserialize(class_: type, reader: Reader, first=None, last=None):
     result = class_()
 
-    for key, type_ in get_usable_fields(class_, start=start, end=end):
+    for key, type_ in get_usable_fields(class_, first=first, last=last):
         if hasattr(type_, "load_from_bytes"):
             setattr(result, key, type_.load_from_bytes(reader, result))
         else:
@@ -167,17 +183,17 @@ def deserialize(class_: type, reader: Reader, start=None, end=None):
     return result
 
 
-def serialize(value, writer: Writer, start=None, end=None):
-    for key, type_ in get_usable_fields(type(value), start=start, end=end):
+def serialize(value, writer: Writer, first=None, last=None):
+    for key, type_ in get_usable_fields(type(value), first=first, last=last):
         if hasattr(type_, "write_from_value"):
             type_.write_from_value(writer, getattr(value, key))
         else:
             serialize(getattr(value, key), writer=writer)
 
 
-def get_serialized_size(value, start=None, end=None) -> int:
+def get_serialized_size(value, first=None, last=None) -> int:
     """ Useful for archive structures that stores headers and data separately and uses offsets for reading the data """
     """ NOTE: this function is quite expensive to call on big data structures """
     writer = SizeCalculatorWriter()
-    serialize(value, writer, start=start, end=end)
+    serialize(value, writer, first=first, last=last)
     return writer.current_size
