@@ -137,7 +137,7 @@ def List(type_: type, size: int | str | Callable, *args, **kwargs) -> type[typin
 
 def get_usable_fields(class_):
     return [(attr, val) for attr, val in class_.__annotations__.items() if
-            not callable(val) and not attr.startswith("__") and not isinstance(val, Skip)]
+            not attr.startswith("__") and not isinstance(val, Skip)]
 
 
 def deserialize(class_: type, reader: Reader):
@@ -154,7 +154,7 @@ def serialize(value, writer: Writer):
         type_.write_from_value(writer, getattr(value, key))
 
 
-def get_deserialized_size(value) -> int:
+def get_serialized_size(value) -> int:
     """ NOTE: this function is quite expensive to call on big data structures """
     writer = SizeCalculatorWriter()
     serialize(value, writer)
