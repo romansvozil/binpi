@@ -80,12 +80,25 @@ def create_simple_number_class(format: str, size: int) -> type[int]:
     return _inner  # type: ignore
 
 
+def create_simple_float_class(format: str, size: int) -> type[float]:
+    class _inner(SerializableType):
+        def load_from_bytes(self, reader: Reader, instance, *args, **kwargs):
+            return struct.unpack(format, reader.read_bytes(size))[0]
+
+        def write_from_value(self, writer: Writer, value, *args, **kwargs):
+            writer.write_bytes(struct.pack(format, value))
+
+    return _inner  # type: ignore
+
+
 LEInt = create_simple_number_class("<i", 4)
 LEUInt = create_simple_number_class("<I", 4)
 LEShort = create_simple_number_class("<h", 2)
 LEUShort = create_simple_number_class("<H", 2)
 LEByte = create_simple_number_class("<b", 1)
 LEUByte = create_simple_number_class("<B", 1)
+LEFloat = create_simple_float_class("<f", 4)
+LEDouble = create_simple_float_class("<d", 8)
 
 BEInt = create_simple_number_class(">i", 4)
 BEUInt = create_simple_number_class(">I", 4)
@@ -93,6 +106,8 @@ BEShort = create_simple_number_class(">h", 2)
 BEUShort = create_simple_number_class(">H", 2)
 BEByte = create_simple_number_class(">b", 1)
 BEUByte = create_simple_number_class(">B", 1)
+BEFloat = create_simple_float_class(">f", 4)
+BEDouble = create_simple_float_class(">d", 8)
 
 
 class _List(SerializableType):
