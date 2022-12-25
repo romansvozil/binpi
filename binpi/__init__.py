@@ -150,15 +150,15 @@ def List(type_: type, size: int | str | Callable, *args, **kwargs) -> type[typin
     return _List(type_, size, *args, **kwargs)  # type: ignore
 
 
-def get_usable_fields(class_):
+def get_usable_fields(class_, start=None, end=None):
     return [(attr, val) for attr, val in class_.__annotations__.items() if
             not attr.startswith("__") and not isinstance(val, Skip)]
 
 
-def deserialize(class_: type, reader: Reader):
+def deserialize(class_: type, reader: Reader, start=None, end=None):
     result = class_()
 
-    for key, type_ in get_usable_fields(class_):
+    for key, type_ in get_usable_fields(class_, start=start, end=end):
         if hasattr(type_, "load_from_bytes"):
             setattr(result, key, type_.load_from_bytes(reader, result))
         else:
@@ -167,17 +167,17 @@ def deserialize(class_: type, reader: Reader):
     return result
 
 
-def serialize(value, writer: Writer):
-    for key, type_ in get_usable_fields(type(value)):
+def serialize(value, writer: Writer, start=None, end=None):
+    for key, type_ in get_usable_fields(type(value), start=start, end=end):
         if hasattr(type_, "write_from_value"):
             type_.write_from_value(writer, getattr(value, key))
         else:
             serialize(getattr(value, key), writer=writer)
 
 
-def get_serialized_size(value) -> int:
+def get_serialized_size(value, start=None, end=None) -> int:
     """ Useful for archive structures that stores headers and data separately and uses offsets for reading the data """
     """ NOTE: this function is quite expensive to call on big data structures """
     writer = SizeCalculatorWriter()
-    serialize(value, writer)
+    serialize(value, writer, start=start, end=end)
     return writer.current_size
