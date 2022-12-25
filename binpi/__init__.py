@@ -161,6 +161,7 @@ def serialize(value, writer: Writer):
 
 
 def get_serialized_size(value) -> int:
+    """ Useful for archive structures that stores headers and data separately and uses offsets for reading the data """
     """ NOTE: this function is quite expensive to call on big data structures """
     writer = SizeCalculatorWriter()
     serialize(value, writer)

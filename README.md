@@ -36,3 +36,4 @@ pip install binpi
 ## TODO:
 - ~~Fix autocompletion (since we're using for annotation `binpi.LEInt()` the IDE's cannot guess correctly the expected type)~~ kinda fixed, but it's quite hacky
 - Performance improvements (batch struct.un/pack should help)
+- Partial structure (de)serializing (optional `from`/`to` arguments)
