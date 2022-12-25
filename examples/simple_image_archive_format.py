@@ -4,6 +4,8 @@ import simple_image_format
 
 class ArchiveItem:
     id: binpi.BEInt()
+    name_length: binpi.BEInt()
+    name: binpi.String(size="name_length")
     image: simple_image_format.Image
 
 

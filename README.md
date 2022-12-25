@@ -33,7 +33,12 @@ _For more examples, check `./examples/`_
 pip install binpi
 ```
 
+## Supported Types:
+
+- LEInt, LEUInt, LEShort, LEUShort, LEByte, LEUByte, LEFloat, LEDouble
+- BEInt, BEUInt, BEShort, BEUShort, BEByte, BEUByte, BEFloat, BEDouble
+- List, String
+
 ## TODO:
 
-- String structure (custom encoding support, sized/c-like)
-- tests
+- Tests

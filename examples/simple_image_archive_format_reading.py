@@ -8,4 +8,4 @@ if __name__ == "__main__":
 
     for item in archive.items:
         item: ArchiveItem
-        print(f"{item.id=} {item.image.width=} {item.image.height=}")
+        print(f"{item.id=} {item.image.width=} {item.image.height=} {item.name=}")

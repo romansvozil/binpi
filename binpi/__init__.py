@@ -10,7 +10,7 @@ class Reader:
 
 class FileReader(Reader):
     def __init__(self, file_path=None, file=None):
-        self.file = file if file is not None else open(file_path, "rb")
+        self.file = file or open(file_path, "rb")
 
     def read_bytes(self, n: int):
         return self.file.read(n)
@@ -119,43 +119,61 @@ BEDouble = create_simple_float_class(">d", 8)
 
 
 class _List(SerializableType):
-    __size: int | str | Callable  # todo: for more complex time the Callable argument kinda fails to provide enough
+    size: int | str | Callable  # todo: for more complex time the Callable argument kinda fails to provide enough
     # context about where exactly are we during deserializing, especially in nested/recursive structures
-    __type: type
+    type: type
 
-    def __init__(self, type_: type, size: int | str | Callable, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.__size = size
-        self.__type = type_
+    def __init__(self, type_, size: int | str | Callable, **kwargs):
+        super().__init__(**kwargs)
+        self.size = size
+        self.type = type_
 
     def load_from_bytes(self, reader: Reader, instance, *args, **kwargs):
         result = []
         for index in range(self.get_size(instance)):
-            if issubclass(self.__type, SerializableType):
-                result.append(self.__type().load_from_bytes(reader, instance))
+            if issubclass(self.type, SerializableType):
+                result.append(self.type().load_from_bytes(reader, instance))
             else:
-                result.append(deserialize(self.__type, reader))
+                result.append(deserialize(self.type, reader))
 
         return result
 
     def write_from_value(self, writer: Writer, value, *args, **kwargs):
         for val in value:
-            if issubclass(self.__type, SerializableType):
-                self.__type().write_from_value(writer, val)
+            if issubclass(self.type, SerializableType):
+                self.type().write_from_value(writer, val)
             else:
                 serialize(val, writer)
 
     def get_size(self, instance):
-        return self.__size \
-            if type(self.__size) == int \
-            else self.__size(instance) \
-            if callable(self.__size) \
-            else getattr(instance, self.__size)
+        return self.size \
+            if type(self.size) == int \
+            else self.size(instance) \
+            if callable(self.size) \
+            else getattr(instance, self.size)
 
+
+class _String(_List):
+    def __init__(self, type_ = LEUByte, size: int | str | Callable = 0, encoding: str = "utf8", **kwargs):
+        super().__init__(type_=type_, size=size, **kwargs)
+        self.encoding = encoding
+
+    def load_from_bytes(self, reader: Reader, instance, *args, **kwargs):
+        result = super().load_from_bytes(reader, instance, *args, **kwargs)
+        return bytes(result).decode(self.encoding)
+
+    def write_from_value(self, writer: Writer, value: str, *args, **kwargs):
+        return super().write_from_value(writer, value.encode(self.encoding), *args, **kwargs)
+    
 
 def List(type_: type, size: int | str | Callable, *args, **kwargs) -> type[typing.List]:
     # quite hacky way of doing this, but it is what it is
     return _List(type_, size, *args, **kwargs)  # type: ignore
+
+
+def String(type_: type = BEUByte, size: int | str | Callable = 0, encoding: str = "utf8", *args, **kwargs) -> type[str]:
+    # quite hacky way of doing this, but it is what it is
+    return _String(type_, size, encoding, *args, **kwargs)  # type: ignore
 
 
 def get_usable_fields(class_, first=None, last=None):

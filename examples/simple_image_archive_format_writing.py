@@ -7,6 +7,8 @@ if __name__ == "__main__":
     archive_item = ArchiveItem()
     archive_item.id = 123
     archive_item.image = binpi.deserialize(Image, reader=binpi.FileReader("../data/image.simple_image_format"))
+    archive_item.name = "Cool looking image"
+    archive_item.name_length = len(archive_item.name) # might not be the case for non ASCII characters
 
     archive = Archive()
     archive.items_count = 1
