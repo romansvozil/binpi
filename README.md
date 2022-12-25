@@ -38,3 +38,4 @@ pip install binpi
 - Performance improvements (batch struct.un/pack should help)
 - Partial structure (de)serializing (optional `from`/`to` arguments)
 - String structure (custom encoding support, sized/c-like)
+- Maybe get rid of LE/BE type prefixes and make it reader's responsibility, not sure if any formats uses both LE and BE
