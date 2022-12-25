@@ -3,8 +3,10 @@
 binpi aims to provide a simple interface for serializing and deserializing binary file formats. 
 
 ## Usage:
+
 ```python
 import binpi
+
 
 class FileHeader:
     prop1: binpi.LEInt()
