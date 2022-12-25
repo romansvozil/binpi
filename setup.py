@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
       name='binpi',
-      version='0.1.5',
+      version='0.1.6',
       description='Simple library for de/serializing binary data',
       readme = "README.md",
       long_description=open("README.md", "r").read(),
