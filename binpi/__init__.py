@@ -147,7 +147,7 @@ def deserialize(class_: type, reader: Reader):
         if hasattr(type_, "load_from_bytes"):
             setattr(result, key, type_.load_from_bytes(reader, result))
         else:
-            deserialize(type_, reader=reader)
+            setattr(result, key, deserialize(type_, reader=reader))
 
     return result
 
@@ -157,7 +157,7 @@ def serialize(value, writer: Writer):
         if hasattr(type_, "write_from_value"):
             type_.write_from_value(writer, getattr(value, key))
         else:
-            serialize(type_, writer=writer)
+            serialize(getattr(value, key), writer=writer)
 
 
 def get_serialized_size(value) -> int:
