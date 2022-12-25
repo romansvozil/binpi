@@ -30,9 +30,6 @@ _For more examples, check `./examples/`_
 pip install binpi
 ```
 
-## Notes:
-- As previously mentioned, binpi is in a state of being a POC, so the whole API might drastically change. Currently, the library uses `__annotations__` to gather data about a class. This might change later to the "django" style of defining models (`prop1 = binpi.LEInt()` instead of `prop1: binpi.LEInt()`), which might (might not).
-
 ## TODO:
 - ~~Fix autocompletion (since we're using for annotation `binpi.LEInt()` the IDE's cannot guess the expected type correctly)~~ kinda fixed, but it's quite hacky
 - Performance improvements (batch struct.un/pack should help)
