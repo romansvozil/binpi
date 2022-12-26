@@ -3,12 +3,12 @@ import typing
 from typing import Callable
 
 
-class Reader:
+class Reader(typing.Protocol):
     def read_bytes(self, n: int):
         raise NotImplementedError
 
 
-class FileReader(Reader):
+class FileReader:
     def __init__(self, file_path=None, file=None):
         self.file = file or open(file_path, "rb")
 
@@ -16,7 +16,7 @@ class FileReader(Reader):
         return self.file.read(n)
 
 
-class BufferReader(Reader):
+class BufferReader:
     offset: int
     data: bytes
 
@@ -30,12 +30,12 @@ class BufferReader(Reader):
         return data
 
 
-class Writer:
+class Writer(typing.Protocol):
     def write_bytes(self, data: bytes):
         raise NotImplementedError
 
 
-class FileWriter(Writer):
+class FileWriter:
     def __init__(self, file_path=None, file=None):
         self.file = file or open(file_path, "wb")
 
@@ -43,7 +43,7 @@ class FileWriter(Writer):
         self.file.write(data)
 
 
-class SizeCalculatorWriter(Writer):
+class SizeCalculatorWriter:
     def __init__(self):
         self.current_size = 0
 
@@ -51,7 +51,7 @@ class SizeCalculatorWriter(Writer):
         self.current_size += len(data)
 
 
-class BufferWriter(Writer):
+class BufferWriter:
     def __init__(self):
         self.buffer = bytes()
 
