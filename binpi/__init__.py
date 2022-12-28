@@ -189,8 +189,11 @@ def get_usable_fields(class_, first=None, last=None):
     return pairs[first_index: min(last_index+1, len(pairs))]
 
 
-def deserialize(class_: type, reader: Reader, first=None, last=None):
+def deserialize(class_: type, reader: Reader = None, first=None, last=None, bytes=None):
     result = class_()
+
+    if bytes:
+        reader = BufferReader(bytes)
 
     for key, type_ in get_usable_fields(class_, first=first, last=last):
         if hasattr(type_, "load_from_bytes"):
