@@ -1,5 +1,6 @@
 import struct
 import typing
+from functools import cache
 from typing import Callable
 
 
@@ -53,10 +54,10 @@ class SizeCalculatorWriter:
 
 class BufferWriter:
     def __init__(self):
-        self.buffer = bytes()
+        self.buffer = bytearray()
 
     def write_bytes(self, data: bytes):
-        self.buffer += data  # todo: probably use byte buffer or whatever is it
+        self.buffer.extend(data)
 
 
 class SerializableType:
@@ -192,7 +193,7 @@ def List(type_: type[ListItemT] | ListItemT, size: int | str | Callable, *args, 
     return _List(type_, size, *args, **kwargs)  # type: ignore
 
 
-def String(type_: type = BEUByte, size: int | str | Callable = 0, encoding: str = "utf8", *args, **kwargs) -> str:
+def String(type_: type = BEUByte(), size: int | str | Callable = 0, encoding: str = "utf8", *args, **kwargs) -> str:
     # quite hacky way of doing this, but it is what it is
     return _String(type_, size, encoding, *args, **kwargs)  # type: ignore
 
@@ -209,6 +210,7 @@ def WrapType(type_: WrapTypeT) -> WrapTypeT:
     return _WrapType(type_)
 
 
+@cache
 def get_usable_fields(class_, first=None, last=None):
     pairs = [(attr, val) for attr, val in class_.__dict__.items() if
              not attr.startswith("__") and not isinstance(val, Skip) and not callable(val)]
@@ -262,4 +264,3 @@ def get_serialized_size(value, first=None, last=None) -> int:
     writer = SizeCalculatorWriter()
     serialize(value, writer, first=first, last=last)
     return writer.current_size
-
