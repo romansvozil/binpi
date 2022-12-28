@@ -118,6 +118,14 @@ BEFloat = create_simple_float_class(">f", 4)
 BEDouble = create_simple_float_class(">d", 8)
 
 
+class Boolean(SerializableType):
+    def load_from_bytes(self, reader: Reader, instance, *args, **kwargs):
+        return struct.unpack("?", reader.read_bytes(1))[0]
+
+    def write_from_value(self, writer: Writer, value, *args, **kwargs):
+        writer.write_bytes(struct.pack("?", value))
+
+
 class _List(SerializableType):
     size: int | str | Callable  # todo: for more complex time the Callable argument kinda fails to provide enough
     # context about where exactly are we during deserializing, especially in nested/recursive structures

@@ -6,6 +6,7 @@ class ArchiveItem:
     id: binpi.BEInt()
     name_length: binpi.BEInt()
     name: binpi.String(size="name_length")
+    is_compressed: binpi.Boolean()
     image: simple_image_format.Image
 
 
