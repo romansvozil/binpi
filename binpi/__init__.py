@@ -131,10 +131,15 @@ Boolean: Callable[..., bool] = _Boolean  # type: ignore
 DeserializedT = typing.TypeVar("DeserializedT")
 
 
+class RecursiveType:
+    def __init__(self):
+        self.type = None
+
+
 class _List(SerializableType):
     size: int | str | Callable  # todo: for more complex time the Callable argument kinda fails to provide enough
     # context about where exactly are we during deserializing, especially in nested/recursive structures
-    type[DeserializedT]: type
+    type: type[DeserializedT]
 
     def __init__(self, type_, size: int | str | Callable, **kwargs):
         super().__init__(**kwargs)
@@ -144,17 +149,17 @@ class _List(SerializableType):
     def load_from_bytes(self, reader: Reader, instance, *args, **kwargs):
         result = []
         for index in range(self.get_size(instance)):
-            if issubclass(self.type, SerializableType):
-                result.append(self.type().load_from_bytes(reader, instance))
+            if issubclass(type(self.type), SerializableType):
+                result.append(self.type.load_from_bytes(reader, instance, parent_custom_type=kwargs.get("parent_custom_type", None)))
             else:
-                result.append(deserialize(self.type, reader))
+                result.append(deserialize(self.type, reader, parent_custom_type=kwargs.get("parent_custom_type", None)))
 
         return result
 
     def write_from_value(self, writer: Writer, value, *args, **kwargs):
         for val in value:
-            if issubclass(self.type, SerializableType):
-                self.type().write_from_value(writer, val)
+            if issubclass(type(self.type), SerializableType):
+                self.type.write_from_value(writer, val)
             else:
                 serialize(val, writer)
 
@@ -217,9 +222,12 @@ def get_usable_fields(class_, first=None, last=None):
     return pairs[first_index: min(last_index + 1, len(pairs))]
 
 
-def deserialize(class_: type[DeserializedT], reader: Reader = None, first=None, last=None, bytes=None) -> DeserializedT:
+def deserialize(class_: type[DeserializedT], reader: Reader = None, first=None, last=None, bytes=None, parent_custom_type=None) -> DeserializedT:
     if isinstance(class_, _WrapType):
         class_ = class_.type
+
+    if isinstance(class_, RecursiveType):
+        class_ = parent_custom_type
 
     result = class_()
 
@@ -228,19 +236,24 @@ def deserialize(class_: type[DeserializedT], reader: Reader = None, first=None, 
 
     for key, type_ in get_usable_fields(class_, first=first, last=last):
         if hasattr(type_, "load_from_bytes"):
-            setattr(result, key, type_.load_from_bytes(reader, result))
+            setattr(result, key, type_.load_from_bytes(reader, result, parent_custom_type=class_))
         else:
-            setattr(result, key, deserialize(type_, reader=reader))
+            setattr(result, key, deserialize(type_, reader=reader, parent_custom_type=class_))
 
     return result
 
 
-def serialize(value, writer: Writer, first=None, last=None):
-    for key, type_ in get_usable_fields(type(value), first=first, last=last):
+def serialize(value, writer: Writer, first=None, last=None, parent_custom_type=None):
+    value_type_ = type(value)
+
+    if isinstance(value_type_, RecursiveType):
+        value_type_ = parent_custom_type
+
+    for key, type_ in get_usable_fields(value_type_, first=first, last=last):
         if hasattr(type_, "write_from_value"):
-            type_.write_from_value(writer, getattr(value, key))
+            type_.write_from_value(writer, getattr(value, key), parent_custom_type=value_type_)
         else:
-            serialize(getattr(value, key), writer=writer)
+            serialize(getattr(value, key), writer=writer, parent_custom_type=value_type_)
 
 
 def get_serialized_size(value, first=None, last=None) -> int:
@@ -249,3 +262,4 @@ def get_serialized_size(value, first=None, last=None) -> int:
     writer = SizeCalculatorWriter()
     serialize(value, writer, first=first, last=last)
     return writer.current_size
+
