@@ -38,6 +38,9 @@ pip install binpi
 - LEInt, LEUInt, LEShort, LEUShort, LEByte, LEUByte, LEFloat, LEDouble
 - BEInt, BEUInt, BEShort, BEUShort, BEByte, BEUByte, BEFloat, BEDouble
 - List, String
+- Boolean
+- RecursiveType (for cases where the structure contains list of substructures of the same type, check the `advanced_structure` example)
+- WrapType (for subtypes, check the `simple_image_archive_format` example)
 
 ## Interface
 
