@@ -1,4 +1,4 @@
-from simple_image_archive_format import Archive, ArchiveItem
+from simple_image_archive_format import Archive
 
 import binpi
 
@@ -7,5 +7,4 @@ if __name__ == "__main__":
     print(f"{archive.items_count=}")
 
     for item in archive.items:
-        item: ArchiveItem
         print(f"{item.id=} {item.image.width=} {item.image.height=} {item.name=} {item.is_compressed=}")

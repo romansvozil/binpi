@@ -1,5 +1,6 @@
 from simple_image_format import *
 
+
 if __name__ == "__main__":
     data = Image()
     data.width = 40

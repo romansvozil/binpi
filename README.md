@@ -9,10 +9,10 @@ import binpi
 
 
 class FileHeader:
-    prop1: binpi.LEInt()
-    prop2: binpi.LEShort()
-    prop3: binpi.LEByte()
-    some_data: binpi.List(binpi.LEByte(), size="prop1")
+    prop1 = binpi.LEInt()
+    prop2 = binpi.LEShort()
+    prop3 = binpi.LEByte()
+    some_data = binpi.List(binpi.LEByte(), size="prop1")
 
 
 # deserializing    
@@ -73,6 +73,25 @@ class Reader(Protocol):
 
 binpi contains `FileReader` and `BufferReader`
 
+## Extending with custom types
+
+To create your own custom (de)serializable type, you have to just create a new child class of `SerializableType` that implements `load_from_bytes` and `write_from_value`
+
+```python
+import typing, binpi, struct
+
+class CustomDoubledInt(binpi.SerializableType):
+    def load_from_bytes(self, reader: binpi.Reader, instance, *args, **kwargs):
+        return struct.unpack("<i", reader.read_bytes(4))[0] * 2
+
+    def write_from_value(self, writer: binpi.Writer, value, *args, **kwargs):
+        writer.write_bytes(struct.pack("<i", value // 2))
+
+""" In case we want to have functional typechecking """
+CustomDoubleInt: typing.Callable[..., int]
+```
+
 ## TODO:
 
+- Find out how to make typechecking of types more convenient ()
 - Tests
