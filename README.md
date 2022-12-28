@@ -93,5 +93,14 @@ CustomDoubleInt: typing.Callable[..., int]
 
 ## TODO:
 
-- Find out how to make typechecking of types more convenient ()
+- Find out how to make typechecking nicer
+- Currently, we're kinda lacking in terms of performance on files with size 100MB+, some ideas:
+  - Serializing:
+    - Batch serializing, probably requires reworking the `SerializableType` class a bit, so we're able to extract the fstrings for `struct.pack` and serialize multiple fields at once
+    - Splitting the data into multiple segments and serializing them in different threads (`ThreadPoolExecutor`)
+  - Deserializing:
+    - Since there we can't really take advantage of multiple processes, the only way how to make this faster is probably batch deserializing (same as first point for serializing)
+  - Both:
+    - A bit smarter data-types, for example string and list for primitive types are not efficient at all
+    - Using Numba for some tasks, but that also requires quite some work, because we would have to refactor quite a lot of stuff that uses `**kwargs` since Numba is not supporting them
 - Tests
