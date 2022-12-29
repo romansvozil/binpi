@@ -1,3 +1,5 @@
+import time
+
 from simple_image_archive_format import Archive, ArchiveItem
 from simple_image_format import Image
 
@@ -12,7 +14,9 @@ if __name__ == "__main__":
     archive_item.is_compressed = True
 
     archive = Archive()
-    archive.items_count = 1
-    archive.items = [archive_item]
+    archive.items_count = 1 * 1000
+    archive.items = [archive_item] * 1000
 
+    begin = time.time()
     binpi.serialize(archive, writer=binpi.FileWriter("../data/archive.simple_image_archive_format"))
+    print(f"serializing took {time.time() - begin:.2f} seconds")

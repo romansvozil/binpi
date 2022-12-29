@@ -31,7 +31,7 @@ if __name__ == "__main__":
     file_name = "../data/advanced.advanced_structure"
 
     root = create_structure()
-    push_substructures(3, root)
+    push_substructures(5, root)
     begin = time.time()
     binpi.serialize(root, writer=binpi.FileWriter(file_name))
     print(f"File Writer:   Serialization took {time.time() - begin} seconds, saved {os.path.getsize(file_name) / (1024 * 1024)} MBs")

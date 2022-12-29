@@ -1,5 +1,6 @@
 import struct
 import typing
+from dataclasses import dataclass
 from functools import cache
 from typing import Callable
 
@@ -61,8 +62,17 @@ class BufferWriter:
 
 
 class SerializableType:
+    STRUCT_PATTERN: str = ""
+    SIZE: int = -1
+
     def __init__(self, *args, use_if=None, **kwargs):
         self.use_if = use_if
+
+    def get_SIZE(self):
+        return self.SIZE
+
+    def get_STRUCT_PATTERN(self):
+        return self.STRUCT_PATTERN
 
     def load_from_bytes(self, reader: Reader, instance, *args, **kwargs):
         raise NotImplementedError
@@ -74,12 +84,86 @@ class SerializableType:
         return self.use_if is None or self.use_if(instance)
 
 
+@cache
+def get_usable_fields(class_, first=None, last=None):
+    pairs = [(attr, val) for attr, val in class_.__dict__.items() if
+             not attr.startswith("__") and not isinstance(val, Skip) and not callable(val)]
+
+    first_index, last_index = 0, len(pairs)
+    if first is not None:
+        first_index = next(i for i in range(len(pairs)) if pairs[i][0] == first)
+    if last is not None:
+        last_index = next(i for i in range(len(pairs)) if pairs[i][0] == last)
+
+    return pairs[first_index: min(last_index + 1, len(pairs))]
+
+
+DeserializedT = typing.TypeVar("DeserializedT")
+
+
+@dataclass
+class Plan:
+    pattern: str
+    total_size: int
+    fields: list[str]
+    serializable_type: typing.Optional[SerializableType] = None
+    type_: typing.Optional[type[DeserializedT]] = None
+
+    def read_using_plan(self, reader: Reader, instance, parent_custom_type=None):
+        if self.type_ is not None:
+            setattr(instance, self.fields[0], deserialize(self.type_, reader=reader))
+        elif self.serializable_type is not None:
+            setattr(instance, self.fields[0],
+                    self.serializable_type.load_from_bytes(reader, instance, parent_custom_type=parent_custom_type))
+        else:
+            vals = struct.unpack(self.pattern, reader.read_bytes(self.total_size))
+            for field, value in zip(self.fields, vals):
+                setattr(instance, field, value)
+
+
+@cache
+def generate_deserializing_plans(type_: type, first=None, last=None):
+    plans = []
+    plan = None
+
+    for key, val in get_usable_fields(type_, first, last):
+        if isinstance(val, SerializableType) and val.get_STRUCT_PATTERN() and val.get_SIZE():
+            if plan is None:
+                plan = Plan("", 0, [])
+
+            plan.pattern += val.STRUCT_PATTERN[1:] if plan.pattern else val.STRUCT_PATTERN
+            plan.total_size += val.SIZE
+            plan.fields.append(key)
+        else:
+            if plan is not None:
+                plans.append(plan)
+                plan = None
+
+            if isinstance(val, SerializableType):
+                if isinstance(val, RecursiveType):
+                    val = type_
+                plans.append(Plan(pattern="", total_size=0, fields=[key], serializable_type=val))
+                continue
+
+            if isinstance(val, RecursiveType):
+                val = type_
+            plans.append(Plan(pattern="", total_size=0, fields=[key], type_=val))
+
+    if plan is not None:
+        plans.append(plan)
+
+    return plans
+
+
 class Skip():
     ...
 
 
 def create_simple_number_class(format: str, size: int) -> type[int]:
     class _inner(SerializableType):
+        STRUCT_PATTERN = format
+        SIZE = size
+
         def load_from_bytes(self, reader: Reader, instance, *args, **kwargs):
             return struct.unpack(format, reader.read_bytes(size))[0]
 
@@ -91,11 +175,8 @@ def create_simple_number_class(format: str, size: int) -> type[int]:
 
 def create_simple_float_class(format: str, size: int) -> type[float]:
     class _inner(SerializableType):
-        def load_from_bytes(self, reader: Reader, instance, *args, **kwargs):
-            return struct.unpack(format, reader.read_bytes(size))[0]
-
-        def write_from_value(self, writer: Writer, value, *args, **kwargs):
-            writer.write_bytes(struct.pack(format, value))
+        STRUCT_PATTERN = format
+        SIZE = size
 
     return _inner  # type: ignore
 
@@ -120,16 +201,11 @@ BEDouble: Callable[..., float] = create_simple_float_class(">d", 8)
 
 
 class _Boolean(SerializableType):
-    def load_from_bytes(self, reader: Reader, instance, *args, **kwargs):
-        return struct.unpack("?", reader.read_bytes(1))[0]
-
-    def write_from_value(self, writer: Writer, value, *args, **kwargs):
-        writer.write_bytes(struct.pack("?", value))
+    STRUCT_PATTERN = "?"
+    SIZE = 1
 
 
 Boolean: Callable[..., bool] = _Boolean  # type: ignore
-
-DeserializedT = typing.TypeVar("DeserializedT")
 
 
 class RecursiveType:
@@ -138,8 +214,7 @@ class RecursiveType:
 
 
 class _List(SerializableType):
-    size: int | str | Callable  # todo: for more complex time the Callable argument kinda fails to provide enough
-    # context about where exactly are we during deserializing, especially in nested/recursive structures
+    size: int | str | Callable
     type: type[DeserializedT]
 
     def __init__(self, type_, size: int | str | Callable, **kwargs):
@@ -151,7 +226,8 @@ class _List(SerializableType):
         result = []
         for index in range(self.get_size(instance)):
             if issubclass(type(self.type), SerializableType):
-                result.append(self.type.load_from_bytes(reader, instance, parent_custom_type=kwargs.get("parent_custom_type", None)))
+                result.append(self.type.load_from_bytes(reader, instance,
+                                                        parent_custom_type=kwargs.get("parent_custom_type", None)))
             else:
                 result.append(deserialize(self.type, reader, parent_custom_type=kwargs.get("parent_custom_type", None)))
 
@@ -210,21 +286,8 @@ def WrapType(type_: WrapTypeT) -> WrapTypeT:
     return _WrapType(type_)
 
 
-@cache
-def get_usable_fields(class_, first=None, last=None):
-    pairs = [(attr, val) for attr, val in class_.__dict__.items() if
-             not attr.startswith("__") and not isinstance(val, Skip) and not callable(val)]
-
-    first_index, last_index = 0, len(pairs)
-    if first is not None:
-        first_index = next(i for i in range(len(pairs)) if pairs[i][0] == first)
-    if last is not None:
-        last_index = next(i for i in range(len(pairs)) if pairs[i][0] == last)
-
-    return pairs[first_index: min(last_index + 1, len(pairs))]
-
-
-def deserialize(class_: type[DeserializedT], reader: Reader = None, first=None, last=None, bytes=None, parent_custom_type=None) -> DeserializedT:
+def deserialize(class_: type[DeserializedT], reader: Reader = None, first=None, last=None, bytes=None,
+                parent_custom_type=None) -> DeserializedT:
     if isinstance(class_, _WrapType):
         class_ = class_.type
 
@@ -236,11 +299,14 @@ def deserialize(class_: type[DeserializedT], reader: Reader = None, first=None, 
     if bytes:
         reader = BufferReader(bytes)
 
-    for key, type_ in get_usable_fields(class_, first=first, last=last):
-        if hasattr(type_, "load_from_bytes"):
-            setattr(result, key, type_.load_from_bytes(reader, result, parent_custom_type=class_))
-        else:
-            setattr(result, key, deserialize(type_, reader=reader, parent_custom_type=class_))
+    plans = generate_deserializing_plans(class_, first=first, last=last)
+    for plan in plans:
+        plan.read_using_plan(reader, result, parent_custom_type=class_)
+    # for key, type_ in get_usable_fields(class_, first=first, last=last):
+    #     if isinstance(type_, SerializableType):
+    #         setattr(result, key, type_.load_from_bytes(reader, result, parent_custom_type=class_))
+    #     else:
+    #         setattr(result, key, deserialize(type_, reader=reader, parent_custom_type=class_))
 
     return result
 
