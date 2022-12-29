@@ -10,7 +10,7 @@ def create_structure() -> AdvancedStructure:
     structure.int_storage = [i - 5 for i in range(10)]
     structure.uint_storage = [i for i in range(10)]
 
-    structure.data_length = 100000
+    structure.data_length = 1000
     structure.data = [i % 256 for i in range(structure.data_length)]
 
     structure.substructures = []
@@ -31,7 +31,7 @@ if __name__ == "__main__":
     file_name = "../data/advanced.advanced_structure"
 
     root = create_structure()
-    push_substructures(5, root)
+    push_substructures(2, root)
     begin = time.time()
     binpi.serialize(root, writer=binpi.FileWriter(file_name))
     print(f"File Writer:   Serialization took {time.time() - begin} seconds, saved {os.path.getsize(file_name) / (1024 * 1024)} MBs")

@@ -14,8 +14,8 @@ if __name__ == "__main__":
     archive_item.is_compressed = True
 
     archive = Archive()
-    archive.items_count = 1 * 1000
-    archive.items = [archive_item] * 1000
+    archive.items_count = 10
+    archive.items = [archive_item] * archive.items_count
 
     begin = time.time()
     binpi.serialize(archive, writer=binpi.FileWriter("../data/archive.simple_image_archive_format"))

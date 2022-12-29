@@ -6,7 +6,7 @@ from simple_structure_many_fields import *
 
 if __name__ == "__main__":
     archive = SimpleStructureManyFieldsArchive()
-    archive.amount = 500000 * 3
+    archive.amount = 100
     archive.items = []
     for i in range(archive.amount):
         item = SimpleStructureManyFields()

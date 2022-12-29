@@ -61,12 +61,9 @@ class BufferWriter:
         self.buffer.extend(data)
 
 
-class SerializableType:
+class SimpleSerializableType:
     STRUCT_PATTERN: str = ""
     SIZE: int = -1
-
-    def __init__(self, *args, use_if=None, **kwargs):
-        self.use_if = use_if
 
     def get_SIZE(self):
         return self.SIZE
@@ -74,14 +71,13 @@ class SerializableType:
     def get_STRUCT_PATTERN(self):
         return self.STRUCT_PATTERN
 
+
+class SerializableType:
     def load_from_bytes(self, reader: Reader, instance, *args, **kwargs):
         raise NotImplementedError
 
     def write_from_value(self, writer: Writer, value, *args, **kwargs):
         raise NotImplementedError
-
-    def should_be_used(self, instance):
-        return self.use_if is None or self.use_if(instance)
 
 
 @cache
@@ -111,7 +107,7 @@ class Plan:
 
     def read_using_plan(self, reader: Reader, instance, parent_custom_type=None):
         if self.type_ is not None:
-            setattr(instance, self.fields[0], deserialize(self.type_, reader=reader))
+            setattr(instance, self.fields[0], deserialize(self.type_, reader=reader, parent_custom_type=parent_custom_type))
         elif self.serializable_type is not None:
             setattr(instance, self.fields[0],
                     self.serializable_type.load_from_bytes(reader, instance, parent_custom_type=parent_custom_type))
@@ -120,6 +116,16 @@ class Plan:
             for field, value in zip(self.fields, vals):
                 setattr(instance, field, value)
 
+    def write_using_plan(self, writer: Writer, instance, parent_custom_type=None):
+        if self.type_ is not None:
+            serialize(getattr(instance, self.fields[0]), writer=writer, parent_custom_type=parent_custom_type)
+        elif self.serializable_type is not None:
+            self.serializable_type.write_from_value(writer, getattr(instance, self.fields[0]), parent_custom_type=parent_custom_type)
+        else:
+            fields_to_write = [getattr(instance, field) for field in self.fields]
+            data_to_write = struct.pack(self.pattern, *fields_to_write)
+            writer.write_bytes(data_to_write)
+
 
 @cache
 def generate_deserializing_plans(type_: type, first=None, last=None):
@@ -127,11 +133,11 @@ def generate_deserializing_plans(type_: type, first=None, last=None):
     plan = None
 
     for key, val in get_usable_fields(type_, first, last):
-        if isinstance(val, SerializableType) and val.get_STRUCT_PATTERN() and val.get_SIZE():
+        if isinstance(val, SimpleSerializableType):
             if plan is None:
                 plan = Plan("", 0, [])
 
-            plan.pattern += val.STRUCT_PATTERN[1:] if plan.pattern else val.STRUCT_PATTERN
+            plan.pattern += val.STRUCT_PATTERN[1:] if plan.pattern else val.STRUCT_PATTERN # todo: do something with the endinianity
             plan.total_size += val.SIZE
             plan.fields.append(key)
         else:
@@ -160,21 +166,15 @@ class Skip():
 
 
 def create_simple_number_class(format: str, size: int) -> type[int]:
-    class _inner(SerializableType):
+    class _inner(SimpleSerializableType):
         STRUCT_PATTERN = format
         SIZE = size
-
-        def load_from_bytes(self, reader: Reader, instance, *args, **kwargs):
-            return struct.unpack(format, reader.read_bytes(size))[0]
-
-        def write_from_value(self, writer: Writer, value, *args, **kwargs):
-            writer.write_bytes(struct.pack(format, value))
 
     return _inner  # type: ignore
 
 
 def create_simple_float_class(format: str, size: int) -> type[float]:
-    class _inner(SerializableType):
+    class _inner(SimpleSerializableType):
         STRUCT_PATTERN = format
         SIZE = size
 
@@ -200,7 +200,7 @@ BEFloat: Callable[..., float] = create_simple_float_class(">f", 4)
 BEDouble: Callable[..., float] = create_simple_float_class(">d", 8)
 
 
-class _Boolean(SerializableType):
+class _Boolean(SimpleSerializableType):
     STRUCT_PATTERN = "?"
     SIZE = 1
 
@@ -224,8 +224,18 @@ class _List(SerializableType):
 
     def load_from_bytes(self, reader: Reader, instance, *args, **kwargs):
         result = []
+
+        if isinstance(self.type, SimpleSerializableType):
+            size = self.get_size(instance)
+            if size == 0:
+                return result
+            pattern = self.type.get_STRUCT_PATTERN()
+            full_pattern = pattern[0] + str(size) + pattern[1:] # todo: again the endianity is annoying
+            bytes = reader.read_bytes(size * self.type.get_SIZE())
+            return list(struct.unpack(full_pattern, bytes))
+
         for index in range(self.get_size(instance)):
-            if issubclass(type(self.type), SerializableType):
+            if isinstance(self.type, SerializableType):
                 result.append(self.type.load_from_bytes(reader, instance,
                                                         parent_custom_type=kwargs.get("parent_custom_type", None)))
             else:
@@ -234,8 +244,18 @@ class _List(SerializableType):
         return result
 
     def write_from_value(self, writer: Writer, value, *args, **kwargs):
+        if isinstance(self.type, SimpleSerializableType):
+            size = len(value)
+            if size == 0:
+                return
+            pattern = self.type.get_STRUCT_PATTERN()
+            full_pattern = pattern[0] + str(size) + pattern[1:] # todo: the endinianity is annoying
+
+            writer.write_bytes(struct.pack(full_pattern, *value))
+            return
+
         for val in value:
-            if issubclass(type(self.type), SerializableType):
+            if isinstance(self.type, SerializableType):
                 self.type.write_from_value(writer, val)
             else:
                 serialize(val, writer)
@@ -302,11 +322,6 @@ def deserialize(class_: type[DeserializedT], reader: Reader = None, first=None, 
     plans = generate_deserializing_plans(class_, first=first, last=last)
     for plan in plans:
         plan.read_using_plan(reader, result, parent_custom_type=class_)
-    # for key, type_ in get_usable_fields(class_, first=first, last=last):
-    #     if isinstance(type_, SerializableType):
-    #         setattr(result, key, type_.load_from_bytes(reader, result, parent_custom_type=class_))
-    #     else:
-    #         setattr(result, key, deserialize(type_, reader=reader, parent_custom_type=class_))
 
     return result
 
@@ -317,11 +332,9 @@ def serialize(value, writer: Writer, first=None, last=None, parent_custom_type=N
     if isinstance(value_type_, RecursiveType):
         value_type_ = parent_custom_type
 
-    for key, type_ in get_usable_fields(value_type_, first=first, last=last):
-        if hasattr(type_, "write_from_value"):
-            type_.write_from_value(writer, getattr(value, key), parent_custom_type=value_type_)
-        else:
-            serialize(getattr(value, key), writer=writer, parent_custom_type=value_type_)
+    plans = generate_deserializing_plans(value_type_, first=first, last=last)
+    for plan in plans:
+        plan.write_using_plan(writer, value, parent_custom_type=value_type_)
 
 
 def get_serialized_size(value, first=None, last=None) -> int:

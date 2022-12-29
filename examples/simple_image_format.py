@@ -18,3 +18,4 @@ class Image:
     width = binpi.LEUInt()
     height = binpi.LEUInt()
     pixels = binpi.List(Pixel, size=lambda i: i.width * i.height)
+    # pixels = binpi.List(binpi.LEUByte(), size=lambda i: i.width * i.height * 4)  # 60* faster than the version with pixels
