@@ -5,8 +5,8 @@ if typing.TYPE_CHECKING:
     from .serializer import Serializer
     from .deserializer import Deserializer
 
-
 DeserializedT = typing.TypeVar("DeserializedT")
+
 
 class SimpleSerializableType:
     STRUCT_PATTERN: str = ""
@@ -72,6 +72,7 @@ class _Boolean(SimpleSerializableType):
 
 
 Boolean: Callable[..., bool] = _Boolean  # type: ignore
+
 
 class _WrapType:
     def __init__(self, type_):

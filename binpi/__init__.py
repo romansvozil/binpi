@@ -8,13 +8,16 @@ from .deserializer import *
 from .serializer import *
 from .list import *
 
+
 def deserialize(class_: type[DeserializedT], reader: Reader = None, first=None, last=None, bytes=None,
                 parent_custom_type=None) -> DeserializedT:
-    return Deserializer(reader=reader, bytes=bytes).deserialize(class_=class_, first=first, last=last, parent_custom_type=parent_custom_type)
+    return Deserializer(reader=reader, bytes=bytes).deserialize(class_=class_, first=first, last=last,
+                                                                parent_custom_type=parent_custom_type)
 
 
 def serialize(value, writer: Writer, first=None, last=None, parent_custom_type=None):
-    return Serializer(writer=writer).serialize(value=value, first=first, last=last, parent_custom_type=parent_custom_type)
+    return Serializer(writer=writer).serialize(value=value, first=first, last=last,
+                                               parent_custom_type=parent_custom_type)
 
 
 def get_serialized_size(value, first=None, last=None) -> int:

@@ -1,8 +1,6 @@
 import time
 
-import binpi
 from simple_structure_many_fields import *
-
 
 if __name__ == "__main__":
     archive = SimpleStructureManyFieldsArchive()

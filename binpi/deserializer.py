@@ -8,7 +8,7 @@ class Deserializer:
     def __init__(self, reader: Reader = None, bytes: bytes = None):
         self.reader = reader or BufferReader(bytes)
 
-    def deserialize(self, class_, parent_custom_type=None, first = None, last = None):
+    def deserialize(self, class_, parent_custom_type=None, first=None, last=None):
         if isinstance(class_, _WrapType):
             class_ = class_.type
 

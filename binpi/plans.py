@@ -21,10 +21,12 @@ class Plan:
 
     def read_using_plan(self, deserializer: "Deserializer", instance, parent_custom_type=None):
         if self.type_ is not None:
-            setattr(instance, self.fields[0], deserializer.deserialize(self.type_, parent_custom_type=parent_custom_type))
+            setattr(instance, self.fields[0],
+                    deserializer.deserialize(self.type_, parent_custom_type=parent_custom_type))
         elif self.serializable_type is not None:
             setattr(instance, self.fields[0],
-                    self.serializable_type.load_from_bytes(deserializer, instance, parent_custom_type=parent_custom_type))
+                    self.serializable_type.load_from_bytes(deserializer, instance,
+                                                           parent_custom_type=parent_custom_type))
         else:
             vals = struct.unpack(self.pattern, deserializer.reader.read_bytes(self.total_size))
             for field, value in zip(self.fields, vals):
@@ -34,7 +36,8 @@ class Plan:
         if self.type_ is not None:
             serializer.serialize(getattr(instance, self.fields[0]), parent_custom_type=parent_custom_type)
         elif self.serializable_type is not None:
-            self.serializable_type.write_from_value(serializer, getattr(instance, self.fields[0]), parent_custom_type=parent_custom_type)
+            self.serializable_type.write_from_value(serializer, getattr(instance, self.fields[0]),
+                                                    parent_custom_type=parent_custom_type)
         else:
             fields_to_write = [getattr(instance, field) for field in self.fields]
             data_to_write = struct.pack(self.pattern, *fields_to_write)
@@ -51,7 +54,8 @@ def generate_deserializing_plans(type_: type, first=None, last=None):
             if plan is None:
                 plan = Plan("", 0, [])
 
-            plan.pattern += val.STRUCT_PATTERN[1:] if plan.pattern else val.STRUCT_PATTERN # todo: do something with the endinianity
+            plan.pattern += val.STRUCT_PATTERN[
+                            1:] if plan.pattern else val.STRUCT_PATTERN  # todo: do something with the endinianity
             plan.total_size += val.SIZE
             plan.fields.append(key)
         else:
