@@ -1,5 +1,3 @@
-import struct
-
 from .reader import *
 from .writer import *
 from .types import *
@@ -7,6 +5,7 @@ from .utils import *
 from .deserializer import *
 from .serializer import *
 from .list import *
+from .into_type_instance import *
 
 
 def deserialize(class_: type[DeserializedT], reader: Reader = None, first=None, last=None, bytes=None,
