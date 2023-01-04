@@ -67,7 +67,7 @@ BEDouble: Callable[..., float] = create_simple_float_class(">d", 8)
 
 
 class _Boolean(SimpleSerializableType):
-    STRUCT_PATTERN = "?"
+    STRUCT_PATTERN = "<?"
     SIZE = 1
 
 
