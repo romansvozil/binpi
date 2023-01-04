@@ -53,7 +53,7 @@ class _List(SerializableType):
             if isinstance(self.type, SerializableType):
                 self.type.write_from_value(serializer, val, parent_instance)
             else:
-                serializer.serialize(val, *args, **kwargs, parent_instance=parent_instance)
+                serializer.serialize(val, *args, **kwargs)
 
     def get_size(self, instance):
         return self.size \

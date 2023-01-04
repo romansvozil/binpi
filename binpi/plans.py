@@ -34,7 +34,7 @@ class Plan:
 
     def write_using_plan(self, serializer: "Serializer", instance, parent_custom_type=None):
         if self.type_ is not None:
-            serializer.serialize(getattr(instance, self.fields[0]), parent_instance=instance, parent_custom_type=parent_custom_type)
+            serializer.serialize(getattr(instance, self.fields[0]), parent_custom_type=parent_custom_type)
         elif self.serializable_type is not None:
             self.serializable_type.write_from_value(serializer, getattr(instance, self.fields[0]), parent_instance=instance,
                                                     parent_custom_type=parent_custom_type)
