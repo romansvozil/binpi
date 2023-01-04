@@ -8,14 +8,14 @@ class Deserializer:
     def __init__(self, reader: Reader = None, bytes: bytes = None):
         self.reader = reader or BufferReader(bytes)
 
-    def deserialize(self, class_, parent_custom_type=None, first=None, last=None):
+    def deserialize(self, class_, parent_custom_type=None, first=None, last=None, instance=None):
         if isinstance(class_, _WrapType):
             class_ = class_.type
 
         if isinstance(class_, RecursiveType):
             class_ = parent_custom_type
 
-        result = class_()
+        result = instance or class_()
 
         plans = generate_deserializing_plans(class_, first=first, last=last)
         for plan in plans:
