@@ -87,7 +87,7 @@ class CustomDoubledInt(binpi.SerializableType):
     def load_from_bytes(self, reader: binpi.Reader, instance, *args, **kwargs):
         return struct.unpack("<i", reader.read_bytes(4))[0] * 2
 
-    def write_from_value(self, writer: binpi.Writer, value, *args, **kwargs):
+    def write_from_value(self, writer: binpi.Writer, value, parent_instance, *args, **kwargs):
         writer.write_bytes(struct.pack("<i", value // 2))
 
 """ In case we want to have functional typechecking """

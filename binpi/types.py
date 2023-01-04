@@ -23,7 +23,7 @@ class SerializableType:
     def load_from_bytes(self, deserializer: "Deserializer", instance, *args, **kwargs):
         raise NotImplementedError
 
-    def write_from_value(self, serializer: "Serializer", value, *args, **kwargs):
+    def write_from_value(self, serializer: "Serializer", value, parent_instance, *args, **kwargs):
         raise NotImplementedError
 
 

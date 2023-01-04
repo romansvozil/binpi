@@ -38,7 +38,7 @@ class _List(SerializableType):
 
         return result
 
-    def write_from_value(self, serializer: "Serializer", value, *args, **kwargs):
+    def write_from_value(self, serializer: "Serializer", value, parent_instance, *args, **kwargs):
         if isinstance(self.type, SimpleSerializableType):
             size = len(value)
             if size == 0:
@@ -51,9 +51,9 @@ class _List(SerializableType):
 
         for val in value:
             if isinstance(self.type, SerializableType):
-                self.type.write_from_value(serializer, val)
+                self.type.write_from_value(serializer, val, parent_instance)
             else:
-                serializer.serialize(val, *args, **kwargs)
+                serializer.serialize(val, *args, **kwargs, parent_instance=parent_instance)
 
     def get_size(self, instance):
         return self.size \
@@ -72,8 +72,8 @@ class _String(_List):
         result = super().load_from_bytes(deserializer, instance, *args, **kwargs)
         return bytes(result).decode(self.encoding)
 
-    def write_from_value(self, serializer: "Serializer", value: str, *args, **kwargs):
-        return super().write_from_value(serializer, value.encode(self.encoding), *args, **kwargs)
+    def write_from_value(self, serializer: "Serializer", value: str, parent_instance, *args, **kwargs):
+        return super().write_from_value(serializer, value.encode(self.encoding), parent_instance, *args, **kwargs)
 
 
 ListItemT = typing.TypeVar("ListItemT")
