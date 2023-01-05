@@ -55,7 +55,7 @@ def generate_deserializing_plans(type_: type, first=None, last=None, endianness=
                 plan = Plan(endianness, 0, [])
 
             plan.pattern += val.STRUCT_PATTERN
-            plan.total_size += val.SIZE
+            plan.total_size += val.get_SIZE()
             plan.fields.append(key)
         else:
             if plan is not None:

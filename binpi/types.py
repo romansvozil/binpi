@@ -1,3 +1,4 @@
+import struct
 import typing
 from typing import Callable
 
@@ -13,10 +14,9 @@ BIG_ENDIAN = ">"
 
 class SimpleSerializableType:
     STRUCT_PATTERN: str = ""
-    SIZE: int = -1
 
     def get_SIZE(self):
-        return self.SIZE
+        return struct.calcsize(self.get_STRUCT_PATTERN())
 
     def get_STRUCT_PATTERN(self):
         return self.STRUCT_PATTERN
@@ -34,35 +34,32 @@ class Skip():
     ...
 
 
-def create_simple_number_class(format: str, size: int) -> type[int]:
+def create_simple_number_class(format: str) -> type[int]:
     class _inner(SimpleSerializableType):
         STRUCT_PATTERN = format
-        SIZE = size
 
     return _inner  # type: ignore
 
 
-def create_simple_float_class(format: str, size: int) -> type[float]:
+def create_simple_float_class(format: str) -> type[float]:
     class _inner(SimpleSerializableType):
         STRUCT_PATTERN = format
-        SIZE = size
 
     return _inner  # type: ignore
 
 
-Int: Callable[..., int] = create_simple_number_class("i", 4)
-UInt: Callable[..., int] = create_simple_number_class("I", 4)
-Short: Callable[..., int] = create_simple_number_class("h", 2)
-UShort: Callable[..., int] = create_simple_number_class("H", 2)
-Byte: Callable[..., int] = create_simple_number_class("b", 1)
-UByte: Callable[..., int] = create_simple_number_class("B", 1)
-Float: Callable[..., float] = create_simple_float_class("f", 4)
-Double: Callable[..., float] = create_simple_float_class("d", 8)
+Int: Callable[..., int] = create_simple_number_class("i")
+UInt: Callable[..., int] = create_simple_number_class("I")
+Short: Callable[..., int] = create_simple_number_class("h")
+UShort: Callable[..., int] = create_simple_number_class("H")
+Byte: Callable[..., int] = create_simple_number_class("b")
+UByte: Callable[..., int] = create_simple_number_class("B")
+Float: Callable[..., float] = create_simple_float_class("f")
+Double: Callable[..., float] = create_simple_float_class("d")
 
 
 class _Boolean(SimpleSerializableType):
     STRUCT_PATTERN = "?"
-    SIZE = 1
 
 
 Boolean: Callable[..., bool] = _Boolean  # type: ignore
