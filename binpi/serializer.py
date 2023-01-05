@@ -1,11 +1,12 @@
 from .plans import generate_deserializing_plans
-from .types import RecursiveType
+from .types import RecursiveType, LITTLE_ENDIAN
 from .writer import Writer
 
 
 class Serializer:
-    def __init__(self, writer: Writer = None):
+    def __init__(self, writer: Writer = None, endianness=LITTLE_ENDIAN):
         self.writer = writer
+        self.endianness = endianness
 
     def serialize(self, value, first=None, last=None, parent_custom_type=None):
         value_type_ = type(value)

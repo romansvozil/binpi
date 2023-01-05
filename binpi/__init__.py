@@ -1,21 +1,21 @@
-from .reader import *
-from .writer import *
+from .reader import Reader, BufferReader, FileReader
+from .writer import Writer, BufferWriter, FileWriter, SizeCalculatorWriter
 from .types import *
-from .utils import *
-from .deserializer import *
-from .serializer import *
-from .list import *
-from .into_type_instance import *
+from .utils import get_usable_fields
+from .deserializer import Deserializer
+from .serializer import Serializer
+from .list import List, String, ByteArray
+from .into_type_instance import into_type_instance
 
 
 def deserialize(class_: type[DeserializedT], reader: Reader = None, first=None, last=None, bytes=None,
-                parent_custom_type=None) -> DeserializedT:
-    return Deserializer(reader=reader, bytes=bytes).deserialize(class_=class_, first=first, last=last,
-                                                                parent_custom_type=parent_custom_type)
+                parent_custom_type=None, instance=None, endianness=LITTLE_ENDIAN) -> DeserializedT:
+    return Deserializer(reader=reader, bytes=bytes, endianness=endianness).deserialize(class_=class_, first=first, last=last,
+                                                                parent_custom_type=parent_custom_type, instance=instance)
 
 
-def serialize(value, writer: Writer, first=None, last=None, parent_custom_type=None):
-    return Serializer(writer=writer).serialize(value=value, first=first, last=last,
+def serialize(value, writer: Writer, first=None, last=None, parent_custom_type=None, endianness=LITTLE_ENDIAN):
+    return Serializer(writer=writer, endianness=endianness).serialize(value=value, first=first, last=last,
                                                parent_custom_type=parent_custom_type)
 
 

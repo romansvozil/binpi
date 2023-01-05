@@ -8,6 +8,9 @@ if typing.TYPE_CHECKING:
 DeserializedT = typing.TypeVar("DeserializedT")
 
 
+LITTLE_ENDIAN = "<"
+BIG_ENDIAN = ">"
+
 class SimpleSerializableType:
     STRUCT_PATTERN: str = ""
     SIZE: int = -1
@@ -47,27 +50,18 @@ def create_simple_float_class(format: str, size: int) -> type[float]:
     return _inner  # type: ignore
 
 
-LEInt: Callable[..., int] = create_simple_number_class("<i", 4)
-LEUInt: Callable[..., int] = create_simple_number_class("<I", 4)
-LEShort: Callable[..., int] = create_simple_number_class("<h", 2)
-LEUShort: Callable[..., int] = create_simple_number_class("<H", 2)
-LEByte: Callable[..., int] = create_simple_number_class("<b", 1)
-LEUByte: Callable[..., int] = create_simple_number_class("<B", 1)
-LEFloat: Callable[..., float] = create_simple_float_class("<f", 4)
-LEDouble: Callable[..., float] = create_simple_float_class("<d", 8)
-
-BEInt: Callable[..., int] = create_simple_number_class(">i", 4)
-BEUInt: Callable[..., int] = create_simple_number_class(">I", 4)
-BEShort: Callable[..., int] = create_simple_number_class(">h", 2)
-BEUShort: Callable[..., int] = create_simple_number_class(">H", 2)
-BEByte: Callable[..., int] = create_simple_number_class(">b", 1)
-BEUByte: Callable[..., int] = create_simple_number_class(">B", 1)
-BEFloat: Callable[..., float] = create_simple_float_class(">f", 4)
-BEDouble: Callable[..., float] = create_simple_float_class(">d", 8)
+Int: Callable[..., int] = create_simple_number_class("i", 4)
+UInt: Callable[..., int] = create_simple_number_class("I", 4)
+Short: Callable[..., int] = create_simple_number_class("h", 2)
+UShort: Callable[..., int] = create_simple_number_class("H", 2)
+Byte: Callable[..., int] = create_simple_number_class("b", 1)
+UByte: Callable[..., int] = create_simple_number_class("B", 1)
+Float: Callable[..., float] = create_simple_float_class("f", 4)
+Double: Callable[..., float] = create_simple_float_class("d", 8)
 
 
 class _Boolean(SimpleSerializableType):
-    STRUCT_PATTERN = "<?"
+    STRUCT_PATTERN = "?"
     SIZE = 1
 
 

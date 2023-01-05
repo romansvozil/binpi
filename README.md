@@ -9,10 +9,10 @@ import binpi
 
 
 class FileHeader:
-    prop1 = binpi.LEInt()
-    prop2 = binpi.LEShort()
-    prop3 = binpi.LEByte()
-    some_data = binpi.List(binpi.LEByte(), size="prop1")
+    prop1 = binpi.Int()
+    prop2 = binpi.Short()
+    prop3 = binpi.Byte()
+    some_data = binpi.List(binpi.Byte(), size="prop1")
 
 
 # deserializing    
@@ -35,8 +35,7 @@ pip install binpi
 
 ## Supported Types:
 
-- LEInt, LEUInt, LEShort, LEUShort, LEByte, LEUByte, LEFloat, LEDouble
-- BEInt, BEUInt, BEShort, BEUShort, BEByte, BEUByte, BEFloat, BEDouble
+- Int, UInt, Short, UShort, Byte, UByte, Float, Double
 - List, String
 - Boolean
 - RecursiveType (for cases where the structure contains list of substructures of the same type, check the `advanced_structure` example)

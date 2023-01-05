@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from functools import cache
 
 from .utils import get_usable_fields
-from .types import SerializableType, DeserializedT, SimpleSerializableType, RecursiveType
+from .types import SerializableType, DeserializedT, SimpleSerializableType, RecursiveType, LITTLE_ENDIAN
 
 if typing.TYPE_CHECKING:
     from .deserializer import Deserializer
@@ -45,17 +45,16 @@ class Plan:
 
 
 @cache
-def generate_deserializing_plans(type_: type, first=None, last=None):
+def generate_deserializing_plans(type_: type, first=None, last=None, endianness=LITTLE_ENDIAN):
     plans = []
     plan = None
 
     for key, val in get_usable_fields(type_, first, last):
         if isinstance(val, SimpleSerializableType):
             if plan is None:
-                plan = Plan("", 0, [])
+                plan = Plan(endianness, 0, [])
 
-            plan.pattern += val.STRUCT_PATTERN[
-                            1:] if plan.pattern else val.STRUCT_PATTERN  # todo: do something with the endinianity
+            plan.pattern += val.STRUCT_PATTERN
             plan.total_size += val.SIZE
             plan.fields.append(key)
         else:

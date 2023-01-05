@@ -5,7 +5,7 @@ if typing.TYPE_CHECKING:
     from .deserializer import Deserializer
     from .serializer import Serializer
 
-from .types import SerializableType, DeserializedT, SimpleSerializableType, LEUByte, BEUByte
+from .types import SerializableType, DeserializedT, SimpleSerializableType, UByte
 
 
 class _List(SerializableType):
@@ -25,7 +25,7 @@ class _List(SerializableType):
             if size == 0:
                 return result
             pattern = self.type.get_STRUCT_PATTERN()
-            full_pattern = pattern[0] + str(size) + pattern[1:] # todo: again the endianity is annoying
+            full_pattern = deserializer.endianness + str(size) + pattern
             bytes = deserializer.reader.read_bytes(size * self.type.get_SIZE())
             return list(struct.unpack(full_pattern, bytes))
 
@@ -44,7 +44,7 @@ class _List(SerializableType):
             if size == 0:
                 return
             pattern = self.type.get_STRUCT_PATTERN()
-            full_pattern = pattern[0] + str(size) + pattern[1:] # todo: the endinianity is annoying
+            full_pattern = serializer.endianness + str(size) + pattern
 
             serializer.writer.write_bytes(struct.pack(full_pattern, *value))
             return
@@ -63,8 +63,23 @@ class _List(SerializableType):
             else getattr(instance, self.size)
 
 
+class _ByteArray(SerializableType):
+    def __init__(self, size):
+        self.size = size
+
+    def get_size(self, instance):
+        if isinstance(self.size, int): return self.size
+        if isinstance(self.size, str): return getattr(instance, self.size)
+        return self.size(instance)
+
+    def load_from_bytes(self, deserializer: "Deserializer", instance, *args, **kwargs):
+        return deserializer.reader.read_bytes(self.get_size(instance))
+
+    def write_from_value(self, serializer: "Serializer", value, *args, **kwargs):
+        serializer.writer.write_bytes(value)
+
 class _String(_List):
-    def __init__(self, type_=LEUByte(), size: int | str | typing.Callable = 0, encoding: str = "utf8", **kwargs):
+    def __init__(self, type_=UByte(), size: int | str | typing.Callable = 0, encoding: str = "utf8", **kwargs):
         super().__init__(type_=type_, size=size, **kwargs)
         self.encoding = encoding
 
@@ -83,7 +98,11 @@ def List(type_: type[ListItemT] | ListItemT, size: int | str | typing.Callable, 
     # quite hacky way of doing this, but it is what it is
     return _List(type_, size, *args, **kwargs)  # type: ignore
 
+def ByteArray(size: int | str | typing.Callable, *args, **kwargs) -> bytearray:
+    # quite hacky way of doing this, but it is what it is
+    return _ByteArray(size, *args, **kwargs)  # type: ignore
 
-def String(type_: type = BEUByte(), size: int | str | typing.Callable = 0, encoding: str = "utf8", *args, **kwargs) -> str:
+
+def String(type_: type = UByte(), size: int | str | typing.Callable = 0, encoding: str = "utf8", *args, **kwargs) -> str:
     # quite hacky way of doing this, but it is what it is
     return _String(type_, size, encoding, *args, **kwargs)  # type: ignore
