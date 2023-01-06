@@ -7,22 +7,29 @@ binpi aims to provide a simple interface for serializing and deserializing binar
 ```python
 import binpi
 
+class Data:
+    ...
 
 class FileHeader:
     prop1 = binpi.Int()
     prop2 = binpi.Short()
     prop3 = binpi.Byte()
+    is_compressed = binpi.Boolean()
+    float_prop = binpi.Float()
     some_data = binpi.ByteArray(size="prop1")
-
-
+    other_data = binpi.List(Data, size="prop3")
+    sub_struct = binpi.WrapType(Data)
+    children_count = binpi.Int()
+    children = binpi.List(binpi.RecursiveType(), size="children_count")
+    
 # deserializing    
-header_data = binpi.deserialize(FileHeader, binpi.FileReader("./some_path"))
+header_data = binpi.deserialize(FileHeader, binpi.FileReader("./some_path"), endianness=binpi.LITTLE_ENDIAN)
 
 # modify
 header_data.prop2 = 200
 
 # serializing 
-binpi.serialize(header_data, binpi.FileWriter("./another_path"))
+binpi.serialize(header_data, binpi.FileWriter("./another_path"), endianness=binpi.LITTLE_ENDIAN)
 ```
 
 _For more complex examples, check `./examples/`_
