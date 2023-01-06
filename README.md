@@ -112,3 +112,4 @@ CustomDoubleInt: typing.Callable[..., int]
 ## TODO:
 
 - Tests
+- Performance benchmarks
