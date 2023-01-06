@@ -11,4 +11,4 @@ if __name__ == "__main__":
     print(f"{archive.items_count=}")
 
     for item in archive.items:
-        print(f"{item.id=} {item.image.width=} {item.image.height=} {item.name=} {item.is_compressed=}")
+        print(f"{item.id=} {item.image.width=} {item.image.height=} {item.name=} {item.is_compressed=} {item.image.image_type=}")

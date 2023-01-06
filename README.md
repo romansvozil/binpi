@@ -36,6 +36,7 @@ pip install binpi
 ## Supported Types:
 
 - Int, UInt, Short, UShort, Byte, UByte, Float, Double
+- IntEnumType
 - List, String, ByteArray
 - Boolean
 - RecursiveType (for cases where the structure contains list of substructures of the same type, check the `advanced_structure` example)

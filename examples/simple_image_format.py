@@ -1,3 +1,5 @@
+import enum
+
 import binpi
 
 
@@ -14,8 +16,13 @@ class Pixel:
         self.alpha = alpha
 
 
+class ImageType(enum.IntEnum):
+    SomeType = 0
+    OtherType = 1
+
+
 class Image:
     width = binpi.UInt()
     height = binpi.UInt()
+    image_type = binpi.IntEnumType(ImageType, binpi.UByte())
     pixels = binpi.List(Pixel, size=lambda i: i.width * i.height)
-    # pixels = binpi.List(binpi.UByte(), size=lambda i: i.width * i.height * 4)  # 60* faster than the version with pixels

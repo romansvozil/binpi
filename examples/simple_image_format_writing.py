@@ -5,6 +5,7 @@ if __name__ == "__main__":
     data = Image()
     data.width = 40
     data.height = 40
+    data.image_type = ImageType.SomeType
     data.pixels = [Pixel(
         round((i % data.width) / data.width * 255),
         round((i % data.width) / data.width * 255),

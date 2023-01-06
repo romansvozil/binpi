@@ -1,3 +1,4 @@
+import enum
 import struct
 import typing
 from typing import Callable
@@ -80,3 +81,37 @@ def WrapType(type_: WrapTypeT) -> WrapTypeT:
 class RecursiveType:
     def __init__(self):
         self.type = None
+
+
+class IntEnumType(SerializableType):
+    def __init__(self, enum_type, backing_type):
+        if isinstance(enum_type, enum.IntEnum):
+            raise ValueError("enum_type is expected to be enum.IntEnum")
+
+        self.enum_type = enum_type
+        self.backing_type = backing_type
+
+    def load_from_bytes(self, deserializer: "Deserializer", instance, *args, **kwargs):
+        if isinstance(self.backing_type, SimpleSerializableType):
+            pattern = deserializer.endianness + self.backing_type.get_STRUCT_PATTERN()
+            data = struct.unpack(
+                pattern,
+                deserializer.reader.read_bytes(struct.calcsize(pattern))
+            )[0]
+        elif isinstance(self.backing_type, SerializableType):
+            data = self.backing_type.load_from_bytes(deserializer, instance)
+        else:
+            raise ValueError("provided type is not SimpleSerializableType or SerializableType")
+
+        return self.enum_type(data)
+
+    def write_from_value(self, serializer: "Serializer", value, parent_instance, *args, **kwargs):
+        if isinstance(self.backing_type, SimpleSerializableType):
+            pattern = serializer.endianness + self.backing_type.get_STRUCT_PATTERN()
+            serializer.writer.write_bytes(
+                struct.pack(pattern, int(value))
+            )
+        elif isinstance(self.backing_type, SerializableType):
+            self.backing_type.write_from_value(serializer, value, parent_instance, *args, **kwargs)
+        else:
+            raise ValueError("provided type is not SimpleSerializableType or SerializableType")

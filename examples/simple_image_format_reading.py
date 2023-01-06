@@ -5,4 +5,5 @@ if __name__ == "__main__":
     data: Image = binpi.deserialize(Image, reader=reader)
 
     print(f"{data.width=}"
-          f"{data.height=}")
+          f"{data.height=}"
+          f"{data.image_type=}")
