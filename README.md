@@ -12,7 +12,7 @@ class FileHeader:
     prop1 = binpi.Int()
     prop2 = binpi.Short()
     prop3 = binpi.Byte()
-    some_data = binpi.List(binpi.Byte(), size="prop1")
+    some_data = binpi.ByteArray(size="prop1")
 
 
 # deserializing    
@@ -36,10 +36,18 @@ pip install binpi
 ## Supported Types:
 
 - Int, UInt, Short, UShort, Byte, UByte, Float, Double
-- List, String
+- List, String, ByteArray
 - Boolean
 - RecursiveType (for cases where the structure contains list of substructures of the same type, check the `advanced_structure` example)
 - WrapType (for subtypes, check the `simple_image_archive_format` example)
+- All the types above support LE/BE
+
+## Comparing with other (de)serializing libraries
+- `pickle` - should be used for completely different use-cases than `binpi`, which is just simple deserializing of python objects, without having to care about its structure. 
+- `struct` - anything `binpi` does can be implemented using `struct`, but `binpi` provides simpler interface for defining data structure, for the cost of performance.
+- `origami` - origami might be a better choice for (de)serializing fixed size data, since it doesn't provide an interface for lists.
+- `bstruct` - same as `origami`
+- `construct` - probably the most comparable library to `binpi`, has even more feature, but instead of `binpi`, the data structures and output is represented using dictionaries
 
 ## Interface
 
@@ -83,11 +91,11 @@ To create your own custom (de)serializable type, you have to just create a new c
 import typing, binpi, struct
 
 class CustomDoubledInt(binpi.SerializableType):
-    def load_from_bytes(self, reader: binpi.Reader, instance, *args, **kwargs):
-        return struct.unpack("<i", reader.read_bytes(4))[0] * 2
+    def load_from_bytes(self, deserializer: binpi.Deserializer, instance, *args, **kwargs):
+        return struct.unpack("<i", deserializer.reader.read_bytes(4))[0] * 2
 
-    def write_from_value(self, writer: binpi.Writer, value, parent_instance, *args, **kwargs):
-        writer.write_bytes(struct.pack("<i", value // 2))
+    def write_from_value(self, serializer: binpi.Serializer, value, parent_instance, *args, **kwargs):
+        serializer.writer.write_bytes(struct.pack("<i", value // 2))
 
 """ In case we want to have functional typechecking """
 CustomDoubleInt: typing.Callable[..., int]
@@ -95,14 +103,4 @@ CustomDoubleInt: typing.Callable[..., int]
 
 ## TODO:
 
-- Find out how to make typechecking nicer
-- Currently, we're kinda lacking in terms of performance on files with size 100MB+, some ideas:
-  - Serializing:
-    - Batch serializing, probably requires reworking the `SerializableType` class a bit, so we're able to extract the fstrings for `struct.pack` and serialize multiple fields at once
-    - Splitting the data into multiple segments and serializing them in different threads (`ThreadPoolExecutor`)
-  - Deserializing:
-    - Since there we can't really take advantage of multiple processes, the only way how to make this faster is probably batch deserializing (same as first point for serializing)
-  - Both:
-    - A bit smarter data-types, for example string and list for primitive types are not efficient at all
-    - Using Numba for some tasks, but that also requires quite some work, because we would have to refactor quite a lot of stuff that uses `**kwargs` since Numba is not supporting them
 - Tests
