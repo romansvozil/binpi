@@ -15,8 +15,9 @@ def deserialize(class_: type[DeserializedT], reader: Reader = None, first=None, 
 
 
 def serialize(value, writer: Writer, first=None, last=None, parent_custom_type=None, endianness=LITTLE_ENDIAN):
-    return Serializer(writer=writer, endianness=endianness).serialize(value=value, first=first, last=last,
+    Serializer(writer=writer, endianness=endianness).serialize(value=value, first=first, last=last,
                                                parent_custom_type=parent_custom_type)
+    return writer
 
 
 def get_serialized_size(value, first=None, last=None) -> int:
