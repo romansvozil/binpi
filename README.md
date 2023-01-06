@@ -29,7 +29,7 @@ header_data = binpi.deserialize(FileHeader, binpi.FileReader("./some_path"), end
 header_data.prop2 = 200
 
 # serializing 
-binpi.serialize(header_data, binpi.FileWriter("./another_path"), endianness=binpi.LITTLE_ENDIAN)
+writer = binpi.serialize(header_data, binpi.FileWriter("./another_path"), endianness=binpi.LITTLE_ENDIAN)
 ```
 
 _For more complex examples, check `./examples/`_
