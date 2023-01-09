@@ -9,7 +9,7 @@ from .types import SerializableType, DeserializedT, SimpleSerializableType, UByt
 
 
 class _List(SerializableType):
-    size: int | str | typing.Callable
+    size: int | str | typing.Callable | SimpleSerializableType
     type: type[DeserializedT]
 
     def __init__(self, type_, size: int | str | typing.Callable, **kwargs):
@@ -19,9 +19,9 @@ class _List(SerializableType):
 
     def load_from_bytes(self, deserializer: "Deserializer", instance, *args, **kwargs):
         result = []
+        size = self.get_size(deserializer, instance)
 
         if isinstance(self.type, SimpleSerializableType):
-            size = self.get_size(instance)
             if size == 0:
                 return result
             pattern = self.type.get_STRUCT_PATTERN()
@@ -29,7 +29,7 @@ class _List(SerializableType):
             bytes = deserializer.reader.read_bytes(size * self.type.get_SIZE())
             return list(struct.unpack(full_pattern, bytes))
 
-        for index in range(self.get_size(instance)):
+        for index in range(size):
             if isinstance(self.type, SerializableType):
                 result.append(self.type.load_from_bytes(deserializer, instance,
                                                         parent_custom_type=kwargs.get("parent_custom_type", None)))
@@ -39,8 +39,12 @@ class _List(SerializableType):
         return result
 
     def write_from_value(self, serializer: "Serializer", value, parent_instance, *args, **kwargs):
+        size = len(value)
+
+        if isinstance(self.size, SimpleSerializableType):
+            serializer.writer.write_bytes(struct.pack(self.size.get_STRUCT_PATTERN(), size))
+
         if isinstance(self.type, SimpleSerializableType):
-            size = len(value)
             if size == 0:
                 return
             pattern = self.type.get_STRUCT_PATTERN()
@@ -55,7 +59,10 @@ class _List(SerializableType):
             else:
                 serializer.serialize(val, *args, **kwargs)
 
-    def get_size(self, instance):
+    def get_size(self, deserializer, instance):
+        if isinstance(self.size, SimpleSerializableType):
+            return struct.unpack(self.size.get_STRUCT_PATTERN(), deserializer.reader.read_bytes(self.size.get_SIZE()))[0]
+
         return self.size \
             if type(self.size) == int \
             else self.size(instance) \

@@ -53,7 +53,7 @@ pip install binpi
 ## Comparing with other (de)serializing libraries
 - `pickle` - should be used for completely different use-cases than `binpi`, which is just simple deserializing of python objects, without having to care about its structure. 
 - `struct` - anything `binpi` does can be implemented using `struct`, but `binpi` provides simpler interface for defining data structure, for the cost of performance.
-- `origami` - origami might be a better choice for (de)serializing fixed size data, since it doesn't provide an interface for lists.
+- `origami` - origami might be a better choice for (de)serializing fixed size data, but it doesn't provide (de)serializing of dynamically sized data, out of the box.
 - `bstruct` - same as `origami`
 - `construct` - probably the most comparable library to `binpi`, has even more feature, but instead of `binpi`, the data structures and output is represented using dictionaries
 

@@ -29,6 +29,7 @@ class Plan:
                                                            parent_custom_type=parent_custom_type))
         else:
             vals = struct.unpack(self.pattern, deserializer.reader.read_bytes(self.total_size))
+            # instance.__dict__.update(zip(self.fields, vals)) # TODO: check if this is a reasonable solution
             for field, value in zip(self.fields, vals):
                 setattr(instance, field, value)
 
