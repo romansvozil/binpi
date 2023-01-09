@@ -42,7 +42,7 @@ class _List(SerializableType):
         size = len(value)
 
         if isinstance(self.size, SimpleSerializableType):
-            serializer.writer.write_bytes(struct.pack(self.size.get_STRUCT_PATTERN(), size))
+            serializer.write_simple_type(self.size, size)
 
         if isinstance(self.type, SimpleSerializableType):
             if size == 0:
@@ -61,7 +61,7 @@ class _List(SerializableType):
 
     def get_size(self, deserializer, instance):
         if isinstance(self.size, SimpleSerializableType):
-            return struct.unpack(self.size.get_STRUCT_PATTERN(), deserializer.reader.read_bytes(self.size.get_SIZE()))[0]
+            return deserializer.read_simple_type(self.size)
 
         return self.size \
             if type(self.size) == int \

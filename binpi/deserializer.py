@@ -1,3 +1,5 @@
+import struct
+
 from .plans import generate_deserializing_plans
 from .types import RecursiveType, LITTLE_ENDIAN
 from .types import _WrapType
@@ -23,3 +25,6 @@ class Deserializer:
             plan.read_using_plan(self, result, parent_custom_type=class_)
 
         return result
+
+    def read_simple_type(self, type):
+        return struct.unpack(self.endianness + type.get_STRUCT_PATTERN(), self.reader.read_bytes(type.get_SIZE()))[0]
